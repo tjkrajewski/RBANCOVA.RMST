@@ -18,7 +18,12 @@ set.seed(2677)
 
 
 ```{r setup}
+# During development, you can uncomment the next line in an interactive session
+# to use the functions in R/ without installing the package:
+devtools::load_all("..")
+
 library(RBANCOVA.RMST)
+
 ```
 
 # Overview
