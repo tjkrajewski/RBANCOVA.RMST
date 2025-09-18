@@ -1,6 +1,9 @@
 ---
 title: "RBANCOVA.RMST: RBANCOVA for RMST estimates with Categorized time-to-event data"
 output: rmarkdown::html_vignette
+    md_document:    # make a GitHub-friendly .md too
+    variant: gfm
+    preserve_yaml: true
 vignette: >
   %\VignetteIndexEntry{RBANCOVA.RMST: RBANCOVA for RMST estimates with Categorized time-to-event data}
   %\VignetteEngine{knitr::rmarkdown}
@@ -97,3 +100,5 @@ Figure \ref{fig:pbc_ci_1} also shows the results of implementing the continuous 
 <!-- \end{figure} -->
 
 ## Multiple Timepoints
+
+<!-- rmarkdown::render("vignettes/RMST-RBANCOVA.Rmd") -->
