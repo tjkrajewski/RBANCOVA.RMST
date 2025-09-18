@@ -1,0 +1,25 @@
+---
+title: "RBANCOVA.RMST: RBANCOVA for RMST estimates with Categorized time-to-event data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{RBANCOVA.RMST: RBANCOVA for RMST estimates with Categorized time-to-event data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+set.seed(2677)
+```
+
+Overview
+
+This vignette shows how to compute covariate-adjusted RMST contrasts using
+RBANCOVA.RMST. We’ll demonstrate the main workflow on a small toy dataset.
+
+```{r setup}
+library(RBANCOVA.RMST)
+```

@@ -474,6 +474,17 @@ calc_diff_unadj_and_wls <- function(trt, ctl,
 # Pipeline function that estimates RMSTs, Differences, and outputs table of results
 #------------------------------------------------------------------------------------#
 
+#' RB-ANCOVA for RMST
+#' @param data_treated A data frame subset to the treated units
+#' @param data_control A data frame subset to the control units
+#' @param event_var Name of the event indicator (0/1).
+#' @param covariate_vars list of covariates to adjust for
+#' @param timepoints Numeric vector of taus for RMST.
+#' @param num_intervals Integer: number of intervals for discretization.
+#'
+#' @return A data frame with one row per difference estimate
+#' @export
+#' 
 rbancova_rmst <- function(data_treated, data_control, time_var, event_var, covariate_vars, timepoints, num_intervals){
   trt <- calculate_rmst_with_covariates(data_treated, time_var, event_var, covariate_vars, timepoints, num_intervals)
   ctl <- calculate_rmst_with_covariates(data_control, time_var, event_var, covariate_vars, timepoints, num_intervals)
