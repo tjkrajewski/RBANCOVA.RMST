@@ -2,47 +2,6 @@ RBANCOVA.RMST: RBANCOVA for RMST estimates with Categorized
 time-to-event data
 ================
 
-``` r
-# During development, you can uncomment the next line in an interactive session
-# to use the functions in R/ without installing the package:
-# devtools::load_all("..")
-devtools::install()
-#> ── R CMD build ─────────────────────────────────────────────────────────────────
-#> WARNING: Rtools is required to build R packages, but is not currently installed.
-#> 
-#> Please download and install Rtools 4.5 from https://cran.r-project.org/bin/windows/Rtools/.
-#>          checking for file 'C:\Users\tjk42\Documents\GitHub\RBANCOVA.RMST/DESCRIPTION' ...  ✔  checking for file 'C:\Users\tjk42\Documents\GitHub\RBANCOVA.RMST/DESCRIPTION' (500ms)
-#>       ─  preparing 'RBANCOVA.RMST':
-#>    checking DESCRIPTION meta-information ...  ✔  checking DESCRIPTION meta-information
-#>       ─  checking for LF line-endings in source and make files and shell scripts (459ms)
-#>   ─  checking for empty or unneeded directories
-#>       ─  building 'RBANCOVA.RMST_0.0.0.9000.tar.gz'
-#>      
-#> 
-#> WARNING: Rtools is required to build R packages, but is not currently installed.
-#> 
-#> Please download and install Rtools 4.5 from https://cran.r-project.org/bin/windows/Rtools/.
-#> Running "C:/PROGRA~1/R/R-45~1.1/bin/x64/Rcmd.exe" INSTALL \
-#>   "C:\Users\tjk42\AppData\Local\Temp\Rtmp2b4iyf/RBANCOVA.RMST_0.0.0.9000.tar.gz" \
-#>   --install-tests 
-#> * installing to library 'C:/Users/tjk42/AppData/Local/R/win-library/4.5'
-#> * installing *source* package 'RBANCOVA.RMST' ...
-#> ** this is package 'RBANCOVA.RMST' version '0.0.0.9000'
-#> ** using staged installation
-#> ** R
-#> ** byte-compile and prepare package for lazy loading
-#> ** help
-#> *** installing help indices
-#> ** building package indices
-#> ** installing vignettes
-#> ** testing if installed package can be loaded from temporary location
-#> ** testing if installed package can be loaded from final location
-#> ** testing if installed package keeps a record of temporary installation path
-#> * DONE (RBANCOVA.RMST)
-
-library(RBANCOVA.RMST)
-```
-
 # Overview
 
 This vignette shows how to implement Randmoziation-Based Covariance
