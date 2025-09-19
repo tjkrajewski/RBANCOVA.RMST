@@ -1,5 +1,25 @@
 
 #--------------------------------------------------------------------------------#
+# Helper Functions
+#--------------------------------------------------------------------------------#
+#' Build K x L interval-length matrix for RMST
+#'
+#' Given timepoints τ (length L), total horizon tau_max, and K intervals of
+#' equal length, returns a K x L matrix whose column l has `interval_length`
+#' in the first floor/round((τ_l / tau_max) * K) rows and 0 below.
+#' @keywords internal
+#' @noRd
+.build_t_tilde <- function(timepoints, tau_max, K, interval_length) {
+  L <- length(timepoints)
+  cnt <- round((timepoints / tau_max) * K)
+  cnt <- pmin(pmax(cnt, 0), K)
+  Tmat <- sapply(cnt, function(cn) c(rep(interval_length, cn),
+                                     rep(0, K - cn)))
+  as.matrix(Tmat)  # K x L
+}
+
+
+#--------------------------------------------------------------------------------#
 # Function to calculate single-arm RMST and RMST variance + covariates
 #--------------------------------------------------------------------------------#
 
@@ -185,12 +205,21 @@ calculate_rmst_with_covariates  <- function(dataset, time_var, event_var, covari
   tau_min_prop = min(timepoints)/tau_max
   
   # Get RMST & V_rmst
-  if (second_last_valid) {
+  #if (second_last_valid) {
     
     # Create vector of interval lengths
-    interval_length = endpoints[2]
+    interval_length <- diff(endpoints)[1]  
+    K_eff <- num_intervals                
+    
+    t_tilde <- .build_t_tilde(
+      timepoints = timepoints,
+      tau_max    = tau_max,
+      K          = K_eff,
+      interval_length = interval_length
+    )
+    #interval_length = endpoints[2]
     #t_tilde <- matrix(c(rep(interval_length, num_intervals)), nrow = num_intervals, ncol = 1)
-    t_tilde <- matrix(c(rep(interval_length, num_intervals*tau_min_prop), rep(0, num_intervals-(num_intervals*tau_min_prop)), rep(interval_length, num_intervals)), nrow = num_intervals, ncol = L)
+    #t_tilde <- matrix(c(rep(interval_length, num_intervals*tau_min_prop), rep(0, num_intervals-(num_intervals*tau_min_prop)), rep(interval_length, num_intervals)), nrow = num_intervals, ncol = L)
     
     #A31:
     # Create an identity matrix of size m x m
@@ -198,12 +227,12 @@ calculate_rmst_with_covariates  <- function(dataset, time_var, event_var, covari
     I_m <- diag(1, nrow = m, ncol = m)
     A31 <- rbind(
       cbind(t(t_tilde)/2, matrix(0, nrow = L, ncol = m)),  
-      cbind(matrix(0, nrow = m, ncol = ncol(t(t_tilde))), I_m)  # Lower-left: Zero matrix, Lower-right: Identity matrix
+      cbind(matrix(0, nrow = m, ncol = L), I_m)  # Lower-left: Zero matrix, Lower-right: Identity matrix
     )
     
     # Original A2 matrix
-    A32 <- matrix(0, nrow = num_intervals, ncol = length(endpoints))
-    for (i in 1:num_intervals) {
+    A32 <- matrix(0, nrow = K_eff, ncol = length(endpoints))
+    for (i in 1:K_eff) {
       for (j in 1:length(endpoints)) {
         if ((j == i) || (j == i + 1)) {
           A32[i, j] <- 1
@@ -219,62 +248,65 @@ calculate_rmst_with_covariates  <- function(dataset, time_var, event_var, covari
     A_3 <- A31%*%A_32
     
     d_j <- A_3 %*% matrix(c(S_1, x_bar), ncol=1)
-    RMST <- (A_3 %*% matrix(c(S_1, x_bar), ncol=1))[1:2]
-    #RMST <- (t(t_tilde) %*% (head(S_1, -1) + tail(S_1, -1))) / 2 
+    
+
+    RMST <- as.numeric(d_j[seq_len(L)])   #First L entries
+    #RMST <- (A_3 %*% matrix(c(S_1, x_bar), ncol=1))[1:2]
     
     V_M_j <- A_3 %*% V_G_j %*% t(A_3)
-    RMST_var <- c(V_M_j[1, 1], V_M_j[2, 2])
+    RMST_var <- diag(V_M_j)[seq_len(L)]
+    #RMST_var <- c(V_M_j[1, 1], V_M_j[2, 2])
     
     
     
     
     
-  } else {
-    
-    # Create vector of interval lengths
-    interval_length = endpoints[2]
-    t_tilde <- matrix(c(rep(interval_length, num_intervals*tau_min_prop), rep(0, (num_intervals-num_intervals*tau_min_prop)+1), rep(interval_length, (num_intervals + 1))), nrow = (num_intervals + 1), ncol = L)
-    
-    #A31:
-    # Create an identity matrix of size m x m
-    m <- length(x_bar)
-    I_m <- diag(1, nrow = m, ncol = m)
-    A31 <- rbind(
-      cbind(t(t_tilde)/2, matrix(0, nrow = 1, ncol = m)),  
-      cbind(matrix(0, nrow = m, ncol = ncol(t(t_tilde))), I_m)  # Lower-left: Zero matrix, Lower-right: Identity matrix
-    )
-    
-    # Original A2 matrix
-    A32 <- matrix(0, nrow = num_intervals+1, ncol = length(endpoints))
-    for (i in 1:num_intervals) {
-      for (j in 1:length(endpoints)) {
-        if ((j == i) || (j == i + 1)) {
-          A32[i, j] <- 1
-        }
-      }
-    }
-    for (i in (num_intervals + 1)) {
-      for (j in (length(endpoints))) {
-        A32[i, j] <- 1
-      }
-    }
-    
-    A_32 <- rbind(
-      cbind(A32, matrix(0, nrow = nrow(A32), ncol = m)),  
-      cbind(matrix(0, nrow = m, ncol = ncol(A32)), I_m)  # Lower-left: Zero matrix, Lower-right: Identity matrix
-    )
-    
-    A_3 <- A31%*%A_32
-    
-    d_j <- A_3 %*% matrix(c(S_1, x_bar), ncol=1)
-    RMST <- (A_3 %*% matrix(c(S_1, x_bar), ncol=1))[1]
-    #RMST <- (t(t_tilde) %*% (head(S_1, -1) + tail(S_1, -1))) / 2 
-    
-    V_M_j <- A_3 %*% V_G_j %*% t(A_3)
-    RMST_var <- c(V_M_j[1, 1], V_M_j[2, 2])
-    
-    
-  }
+  # } else {
+  #   
+  #   # Create vector of interval lengths
+  #   interval_length = endpoints[2]
+  #   t_tilde <- matrix(c(rep(interval_length, num_intervals*tau_min_prop), rep(0, (num_intervals-num_intervals*tau_min_prop)+1), rep(interval_length, (num_intervals + 1))), nrow = (num_intervals + 1), ncol = L)
+  #   
+  #   #A31:
+  #   # Create an identity matrix of size m x m
+  #   m <- length(x_bar)
+  #   I_m <- diag(1, nrow = m, ncol = m)
+  #   A31 <- rbind(
+  #     cbind(t(t_tilde)/2, matrix(0, nrow = 1, ncol = m)),  
+  #     cbind(matrix(0, nrow = m, ncol = ncol(t(t_tilde))), I_m)  # Lower-left: Zero matrix, Lower-right: Identity matrix
+  #   )
+  #   
+  #   # Original A2 matrix
+  #   A32 <- matrix(0, nrow = num_intervals+1, ncol = length(endpoints))
+  #   for (i in 1:num_intervals) {
+  #     for (j in 1:length(endpoints)) {
+  #       if ((j == i) || (j == i + 1)) {
+  #         A32[i, j] <- 1
+  #       }
+  #     }
+  #   }
+  #   for (i in (num_intervals + 1)) {
+  #     for (j in (length(endpoints))) {
+  #       A32[i, j] <- 1
+  #     }
+  #   }
+  #   
+  #   A_32 <- rbind(
+  #     cbind(A32, matrix(0, nrow = nrow(A32), ncol = m)),  
+  #     cbind(matrix(0, nrow = m, ncol = ncol(A32)), I_m)  # Lower-left: Zero matrix, Lower-right: Identity matrix
+  #   )
+  #   
+  #   A_3 <- A31%*%A_32
+  #   
+  #   d_j <- A_3 %*% matrix(c(S_1, x_bar), ncol=1)
+  #   RMST <- (A_3 %*% matrix(c(S_1, x_bar), ncol=1))[1]
+  #   #RMST <- (t(t_tilde) %*% (head(S_1, -1) + tail(S_1, -1))) / 2 
+  #   
+  #   V_M_j <- A_3 %*% V_G_j %*% t(A_3)
+  #   RMST_var <- c(V_M_j[1, 1], V_M_j[2, 2])
+  #   
+  #   
+  # }
   
   # Now calculate RMST based on continuous time
   # Note that this keeps all intervals (even the ones dropped for our calcs)
@@ -489,9 +521,21 @@ rbancova_rmst <- function(data_treated, data_control, time_var, event_var, covar
   trt <- calculate_rmst_with_covariates(data_treated, time_var, event_var, covariate_vars, timepoints, num_intervals)
   ctl <- calculate_rmst_with_covariates(data_control, time_var, event_var, covariate_vars, timepoints, num_intervals)
   
-  diff_tc <- calc_diff_unadj_and_wls( trt, ctl, time_labels = timepoints, 
-                                      alpha = 0.05,
-                                      contrast_idx = c(1, 2) )   # Δ(τ2 - τ1); change as needed)
+  L <- length(timepoints)
+  # keep the single-τ contrasts (Treated − Control), skip Δ if L == 1
+  ci_idx <- if (L >= 2) c(1, L) else NULL
   
+  calc_diff_unadj_and_wls(
+    trt, ctl,
+    time_labels  = timepoints,  # length L (works with L == 1)
+    alpha        = 0.05,
+    contrast_idx = ci_idx       # NULL => no Δ row
+  )
 }
 
+
+
+
+# #diff_tc <- calc_diff_unadj_and_wls( trt, ctl, time_labels = timepoints, 
+#   alpha = 0.05,
+#   contrast_idx = ifelse(length(timepoints)>1), c(1, 2), NULL )   # Δ(τ2 - τ1); change as needed)

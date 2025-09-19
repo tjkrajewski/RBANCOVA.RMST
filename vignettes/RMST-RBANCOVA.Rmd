@@ -26,6 +26,7 @@ set.seed(2677)
 devtools::install()
 
 library(RBANCOVA.RMST)
+library(dplyr)
 
 ```
 
@@ -38,14 +39,58 @@ Primary biliary cholangitis (PBC) is a chronic autoimmune disease characterized 
 
 The dataset includes 424 patients diagnosed with PBC who were referred to the Mayo Clinic between 1974 and 1984 \citep{survival-package, survival-book}. Of these, 312 patients were enrolled in a randomized, placebo-controlled trial of the drug D-penicillamine, while the remaining 112 cases did not participate in the clinical trial but consented to basic measurements and follow-up for survival. The dataset encompasses clinical variables, including age, sex, and a range of laboratory biomarkers such as serum bilirubin, serum albumin, and alkaline phosphatase levels, alongside clinical indicators like the presence of ascites, hepatomegaly, blood vessel malformations (spider angiomata), and histologic stage of disease at entry. Participants' survival outcomes are tracked until death, loss to follow-up (censored), liver transplantation (considered censored at time of transplant), or censoring at the study endpoint in July 1986. The PBC dataset can be accessed by installing the \emph{survival} package in R with dataset \emph{pbc} \citep{survival_package}.
 
+```{r, include=TRUE}
+
+#--------------------------------------------------------------------------------#
+# Filter PBC Data
+#--------------------------------------------------------------------------------#
+library(survival)
+
+#Filter to those enrolled in the randomized trial
+pbc_filtered <- pbc %>% filter(!is.na(trt))
+
+#Original data: 0/1/2 = censored/transplant/dead
+##Edit so that transplant = censored at time of transplant [death = 1, 0 = censored/transplant]
+pbc_filtered <- pbc_filtered %>%
+  mutate(status_dichot = ifelse(status == 2, 1, 0))
+
+#Create year variable and create arm variable [0=placebo, 1=D-penicillmain]
+pbc_filtered <- pbc_filtered %>%
+  mutate(time_year = time/365,
+         arm = ifelse(trt == 2, 0, trt))
+
+#Current RBANCOVA-RMST methodology assumes no missing data
+#impute mean copper level within each group when missing. 
+mean_copper_1 <- mean(pbc_filtered[!(is.na(pbc_filtered$copper)) & pbc_filtered$arm==1,]$copper)
+mean_copper_0 <-  mean(pbc_filtered[!(is.na(pbc_filtered$copper)) & pbc_filtered$arm==0,]$copper)
+
+pbc_filtered <- pbc_filtered %>%
+  mutate(copper_imp = ifelse(is.na(copper), ifelse(arm==1, mean_copper_1, mean_copper_0), copper))
+
+```
+
+
 This analysis focuses on the 312 trial participants (158 in the D-penicillamine arm, 154 in the placebo arm). We implement randomization-based covariate adjustment for RMST estimation, as described in Section \ref{sec:ch4_methods}, to estimate treatment effects when adjusting for a selection of covariates. 
 
 
 The methodology described in Section \ref{sec:ch4_rmst_methodology} was applied to the PBC dataset. The Kaplan-Meier curves illustrate the time to event for participants in the placebo and D-penicillamine groups over a 12.5-year follow-up period (Figure \ref{fig:pbc_km}). Over the first five years, there is minimal separation in survival probabilites between the two arms, with the D-penicillamine arm showing slightly higher survival probabilities compared to the placebo group. However, starting around five years, the Kaplan-Meier survival curves demonstrate that participants in the placebo arm generally had a higher probability of survival compared to those in the D-penicillamine group until approximately year nine or ten. %The separation between the curves becomes more noticeable around 5 years, indicating a potential survival disadvantage for the D-penicillamine group. 
 
-```{r, echo = FALSE}
-#KM Plot
+```{r, echo = FALSE, warning=FALSE}
+
+library(survminer)
+fit_trt <- survfit(Surv(time_year, status_dichot) ~ trt,
+                   data =pbc_filtered)
+# Visualize with survminer
+ggsurvplot(fit_trt, 
+           data = pbc_filtered, 
+           risk.table = TRUE, 
+           censor.shape = NA,                 # Remove plus signs at censoring points
+           legend.labs = c("D-penicillamine", "Placebo"),  # Rename the groups
+           xlab = "Years",                     # Change x-axis label to 'Years'
+           legend.title = "Trial Arm")    
 ```
+
+
 
 <!-- \begin{figure} -->
 <!-- \centering -->
@@ -61,7 +106,10 @@ To further refine the estimated difference in RMST, we employed RB-ANCOVA to adj
 
 
 ```{r, echo = FALSE}
-#Create covariate table
+pbc_filtered_trt <- pbc_filtered[pbc_filtered$arm==1,]
+pbc_filtered_ctl <- pbc_filtered[pbc_filtered$arm==0,]
+
+rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, time_var="time_year", event_var="status_dichot", covariate_vars=c("stage","copper_imp", "bili", "albumin"), timepoints=c(5,10), num_intervals=10)
 ```
 
 <!-- \begin{table} -->
@@ -102,3 +150,6 @@ Figure \ref{fig:pbc_ci_1} also shows the results of implementing the continuous 
 ## Multiple Timepoints
 
 <!-- rmarkdown::render("vignettes/RMST-RBANCOVA.Rmd") -->
+
+## References
+
