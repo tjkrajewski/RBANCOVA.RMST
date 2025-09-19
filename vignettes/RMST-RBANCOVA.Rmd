@@ -102,15 +102,15 @@ ggsurvplot(fit_trt,
 
 To quantify the observed difference, we calculated the RMST for each group from the start of the trial until year ten using ten yearly intervals. Time was restricted to ten years of follow-up as many individuals at risk after year ten were censored before the end of follow-up. This yielded an RMST of 7.13 years (SE 0.28) for the D-penicillamine group and 7.28 years (SE 0.30) for the placebo group. %These results estimate that the average survival time during the first ten years of follow-up was 7.13 years in the D-penicillamine group and 7.28 years in the placebo group. The unadjusted difference in RMST (D-penicillamine - placebo) was estimated to be -0.15 years with a confidence interval of [-0.95, 0.65] (Figure \ref{fig:pbc_ci_1}). 
 
-To further refine the estimated difference in RMST, we employed RB-ANCOVA to adjust for covariates selected via stepwise selection. The covariates retained for adjustment were histologic stage of disease, copper (ug/day), serum bilirubin (mg/dl), and serum albumin (g/dl), reflecting clinically relevant factors that might impact survival outcomes. Baseline balance between the trial arms was similar for most of these covariates (Table \ref{table:pbc_covs}): the average histoloic stage was slightly higher in the placebo group (3.09 vs. 2.97), while serum bilirubin levels were lower in the D-penicillamine group (2.87 vs. 3.65 mg/dl). Copper levels and serum albumin were comparable between groups, indicating minimal baseline differences. Assessing the extent of random imbalance between the two treatment arms, as described in Section \ref{sec:ch4_Step6_wls_main} gave no evidence of unexpected imbalance among the covariates (p-value = 0.23). 
-
-
-```{r, echo = FALSE}
+```{r}
 pbc_filtered_trt <- pbc_filtered[pbc_filtered$arm==1,]
 pbc_filtered_ctl <- pbc_filtered[pbc_filtered$arm==0,]
 
-rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, time_var="time_year", event_var="status_dichot", covariate_vars=c("stage","copper_imp", "bili", "albumin"), timepoints=10, num_intervals=10)
+rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, time_var="time_year", event_var="status_dichot", covariate_vars=NULL, timepoints=10, num_intervals=10)
+
 ```
+
+To further refine the estimated difference in RMST, we employed RB-ANCOVA to adjust for covariates selected via stepwise selection. The covariates retained for adjustment were histologic stage of disease, copper (ug/day), serum bilirubin (mg/dl), and serum albumin (g/dl), reflecting clinically relevant factors that might impact survival outcomes. Baseline balance between the trial arms was similar for most of these covariates (Table \ref{table:pbc_covs}): the average histoloic stage was slightly higher in the placebo group (3.09 vs. 2.97), while serum bilirubin levels were lower in the D-penicillamine group (2.87 vs. 3.65 mg/dl). Copper levels and serum albumin were comparable between groups, indicating minimal baseline differences. Assessing the extent of random imbalance between the two treatment arms, as described in Section \ref{sec:ch4_Step6_wls_main} gave no evidence of unexpected imbalance among the covariates (p-value = 0.23). 
 
 <!-- \begin{table} -->
 <!-- \caption{Mean (SE) of selected variables by treatment arm} -->
@@ -131,6 +131,11 @@ rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, ti
 After adjusting for these covariates using RB-ANCOVA, the adjusted RMST difference was estimated to be -0.44 years with a confidence interval of [-1.05, 0.17].  
 While the RB-ANCOVA results are consistent with the unadjusted results, the covariate adjustment improved the precision of the estimate. The CI half-width for the unadjusted estimate was 0.80 versus 0.61 for the adjusted estimate. 
 
+```{r}
+
+rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, time_var="time_year", event_var="status_dichot", covariate_vars=c("stage","copper_imp", "bili", "albumin"), timepoints=10, num_intervals=10)
+
+```
 
 Figure \ref{fig:pbc_ci_1} also shows the results of implementing the continuous methodology, unadjusted, as well as adjusted for covariates via \citet{Tian2018}'s ANCOVA-type method. Results when implementing the continuous methodology are consistent with those found with our methodology. Adjusting for covariates via RB-ANCOVA results in a similar estimate and confidence interval to that of \citet{Tian2018}'s method, but the RB-ANCOVA adjustment does not require the assumptions of \citet{Tian2018} to hold.
 
@@ -150,6 +155,12 @@ Figure \ref{fig:pbc_ci_1} also shows the results of implementing the continuous 
 ## Multiple Timepoints
 
 <!-- rmarkdown::render("vignettes/RMST-RBANCOVA.Rmd") -->
+
+```{r}
+
+rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, time_var="time_year", event_var="status_dichot", covariate_vars=c("stage","copper_imp", "bili", "albumin"), timepoints=c(5,10), num_intervals=10)
+
+```
 
 ## References
 
