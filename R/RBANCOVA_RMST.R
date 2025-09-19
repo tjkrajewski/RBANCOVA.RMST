@@ -525,7 +525,7 @@ rbancova_rmst <- function(data_treated, data_control, time_var, event_var, covar
   # keep the single-τ contrasts (Treated − Control), skip Δ if L == 1
   ci_idx <- if (L >= 2) c(1, L) else NULL
   
-  calc_diff_unadj_and_wls(
+  diff_tc <- calc_diff_unadj_and_wls(
     trt, ctl,
     time_labels  = timepoints,  # length L (works with L == 1)
     alpha        = 0.05,
@@ -535,7 +535,3 @@ rbancova_rmst <- function(data_treated, data_control, time_var, event_var, covar
 
 
 
-
-# #diff_tc <- calc_diff_unadj_and_wls( trt, ctl, time_labels = timepoints, 
-#   alpha = 0.05,
-#   contrast_idx = ifelse(length(timepoints)>1), c(1, 2), NULL )   # Δ(τ2 - τ1); change as needed)
