@@ -75,7 +75,7 @@ This analysis focuses on the 312 trial participants (158 in the D-penicillamine 
 
 The methodology described in Section \ref{sec:ch4_rmst_methodology} was applied to the PBC dataset. The Kaplan-Meier curves illustrate the time to event for participants in the placebo and D-penicillamine groups over a 12.5-year follow-up period (Figure \ref{fig:pbc_km}). Over the first five years, there is minimal separation in survival probabilites between the two arms, with the D-penicillamine arm showing slightly higher survival probabilities compared to the placebo group. However, starting around five years, the Kaplan-Meier survival curves demonstrate that participants in the placebo arm generally had a higher probability of survival compared to those in the D-penicillamine group until approximately year nine or ten. %The separation between the curves becomes more noticeable around 5 years, indicating a potential survival disadvantage for the D-penicillamine group. 
 
-```{r, echo = FALSE, warning=FALSE}
+```{r, echo = FALSE, warning=FALSE, results=FALSE, message=FALSE}
 
 library(survminer)
 fit_trt <- survfit(Surv(time_year, status_dichot) ~ trt,

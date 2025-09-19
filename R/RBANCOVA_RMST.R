@@ -209,7 +209,7 @@ calculate_rmst_with_covariates  <- function(dataset, time_var, event_var, covari
     
     # Create vector of interval lengths
     interval_length <- diff(endpoints)[1]  
-    K_eff <- num_intervals                
+    K_eff <- length(endpoints)-1                
     
     t_tilde <- .build_t_tilde(
       timepoints = timepoints,
@@ -227,11 +227,11 @@ calculate_rmst_with_covariates  <- function(dataset, time_var, event_var, covari
     I_m <- diag(1, nrow = m, ncol = m)
     A31 <- rbind(
       cbind(t(t_tilde)/2, matrix(0, nrow = L, ncol = m)),  
-      cbind(matrix(0, nrow = m, ncol = L), I_m)  # Lower-left: Zero matrix, Lower-right: Identity matrix
+      cbind(matrix(0, nrow = m, ncol = K_eff), I_m)  # Lower-left: Zero matrix, Lower-right: Identity matrix
     )
     
     # Original A2 matrix
-    A32 <- matrix(0, nrow = K_eff, ncol = length(endpoints))
+    A32 <- matrix(0, nrow = K_eff, ncol = K_eff+1)
     for (i in 1:K_eff) {
       for (j in 1:length(endpoints)) {
         if ((j == i) || (j == i + 1)) {
