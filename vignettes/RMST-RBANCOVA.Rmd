@@ -1,8 +1,8 @@
 ---
 title: "RBANCOVA.RMST: RBANCOVA for RMST estimates with Categorized time-to-event data"
 output:
-  github_document:
-    html_preview: true
+  github_document: default # put github_document *before* html_document
+  html_document: default
 vignette: >
   %\VignetteIndexEntry{RBANCOVA.RMST: RBANCOVA for RMST estimates with Categorized time-to-event data}
   %\VignetteEngine{knitr::rmarkdown}
