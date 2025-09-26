@@ -331,7 +331,7 @@ calculate_rmst_with_covariates  <- function(dataset, time_var, event_var, covari
   
   
   #return(results_df_covs)
-  return(list(results_df_covs = results_df_covs, V_M_j = V_M_j, d_j = d_j))
+  return(list(covariate_vars = covariate_vars, results_df_covs = results_df_covs, V_M_j = V_M_j, d_j = d_j))
   
   
 }
@@ -380,7 +380,7 @@ calc_diff_unadj_and_wls <- function(trt, ctl,
                                     alpha = 0.05,
                                     digits = 2,
                                     contrast_idx = c(1, length(time_labels)),
-                                    covariates = NULL,        # <— NEW
+                                    covariates = covariate_vars,        # <— NEW
                                     print_table = TRUE) {
   
   if (length(time_labels) < 1) stop("Provide time_labels (length = L).")

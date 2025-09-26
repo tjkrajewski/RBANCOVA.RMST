@@ -100,7 +100,7 @@ ggsurvplot(fit_trt,
 
 ## Single Timepoint
 
-To quantify the observed difference, we calculated the RMST for each group from the start of the trial until year ten using ten yearly intervals. Time was restricted to ten years of follow-up as many individuals at risk after year ten were censored before the end of follow-up. This yielded an RMST of 7.13 years (SE 0.28) for the D-penicillamine group and 7.28 years (SE 0.30) for the placebo group. %These results estimate that the average survival time during the first ten years of follow-up was 7.13 years in the D-penicillamine group and 7.28 years in the placebo group. The unadjusted difference in RMST (D-penicillamine - placebo) was estimated to be -0.15 years with a confidence interval of [-0.95, 0.65] (Figure \ref{fig:pbc_ci_1}). 
+To quantify the observed difference, we calculated the RMST for each group from the start of the trial until year ten using ten yearly intervals. Time was restricted to ten years of follow-up as many individuals at risk after year ten were censored before the end of follow-up. This yielded an RMST of 7.13 years (SE 0.28) for the D-penicillamine group and 7.28 years (SE 0.30) for the placebo group. The unadjusted difference in RMST (D-penicillamine - placebo) was estimated to be -0.15 years with a confidence interval of [-0.95, 0.65] (Figure \ref{fig:pbc_ci_1}). 
 
 ```{r}
 pbc_filtered_trt <- pbc_filtered[pbc_filtered$arm==1,]
