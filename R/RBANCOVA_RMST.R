@@ -538,6 +538,7 @@ rbancova_rmst <- function(data_treated, data_control, time_var, event_var, covar
     time_labels  = timepoints,  # length L (works with L == 1)
     alpha        = 0.05,
     contrast_idx = ci_idx       # NULL => no Δ row
+    covariates = covariate_vars
   )
 }
 
