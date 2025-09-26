@@ -36,7 +36,8 @@ angiomata), and histologic stage of disease at entry. Participants’
 survival outcomes are tracked until death, loss to follow-up (censored),
 liver transplantation (considered censored at time of transplant), or
 censoring at the study endpoint in July 1986. The PBC dataset can be
-accessed by installing the package in R with dataset (Therneau 2024).
+accessed by installing the *survival* package in R with dataset *pbc*
+(Therneau 2024).
 
 ``` r
 
@@ -84,7 +85,12 @@ curves demonstrate that participants in the placebo arm generally had a
 higher probability of survival compared to those in the D-penicillamine
 group until approximately year nine or ten.
 
-![](RMST-RBANCOVA_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+<img src="RMST-RBANCOVA_files/figure-gfm/unnamed-chunk-3-1.png" width="100%" />
+***Figure 1.*** *Kaplan-Meier (KM) estimate for time-to-death of each
+treatment group (D-penicillamine or placebo) for patients enrolled in
+the PBC Mayo Clinic trial. Time represents years from trial registration
+to death or last date known alive. Risk table shows number at risk
+(cumulative number censored) at each time point.*
 
 ## Single Timepoint
 
@@ -96,17 +102,19 @@ follow-up. This yielded an RMST of 7.13 years (SE 0.28) for the
 D-penicillamine group and 7.28 years (SE 0.30) for the placebo group.
 The unadjusted difference in RMST (D-penicillamine - placebo) was
 estimated to be -0.15 years with a confidence interval of \[-0.95,
-0.65\] (Figure ).
+0.65\] ***Figure 2***. *P-values are not shown but can be requested for
+contrasts between treatment groups within the rbancova_rmst() function
+by adding* ***show_p = TRUE***.
 
 ``` r
 pbc_filtered_trt <- pbc_filtered[pbc_filtered$arm==1,]
 pbc_filtered_ctl <- pbc_filtered[pbc_filtered$arm==0,]
 
 rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, time_var="time_year", event_var="status_dichot", covariate_vars=NULL, timepoints=10, num_intervals=10)
-#>      method          contrast time              est_CI   p_value
-#>  unadjusted    RMST (Treated)   10   7.13 (6.58, 7.69)        NA
-#>  unadjusted    RMST (Control)   10   7.28 (6.70, 7.87)        NA
-#>  unadjusted Treated - Control   10 -0.15 (-0.95, 0.65) 0.7142029
+#>      method          contrast time              est_CI   se
+#>  unadjusted    RMST (Treated)   10   7.13 (6.58, 7.69) 0.28
+#>  unadjusted    RMST (Control)   10   7.28 (6.70, 7.87) 0.30
+#>  unadjusted Treated - Control   10 -0.15 (-0.95, 0.65) 0.41
 ```
 
 To further refine the estimated difference in RMST, we employed
@@ -135,20 +143,31 @@ adjusted estimate.
 ``` r
 
 results_1time <- rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, time_var="time_year", event_var="status_dichot", covariate_vars=c("stage","copper_imp", "bili", "albumin"), timepoints=10, num_intervals=10)
-#>              method          contrast time              est_CI   p_value
-#>          unadjusted    RMST (Treated)   10   7.13 (6.58, 7.69)        NA
-#>          unadjusted    RMST (Control)   10   7.28 (6.70, 7.87)        NA
-#>          unadjusted Treated - Control   10 -0.15 (-0.95, 0.65) 0.7142029
-#>  covariate-adjusted Treated - Control   10 -0.44 (-1.05, 0.17) 0.1582748
+#>              method          contrast time              est_CI   se
+#>          unadjusted    RMST (Treated)   10   7.13 (6.58, 7.69) 0.28
+#>          unadjusted    RMST (Control)   10   7.28 (6.70, 7.87) 0.30
+#>          unadjusted Treated - Control   10 -0.15 (-0.95, 0.65) 0.41
+#>  covariate-adjusted Treated - Control   10 -0.44 (-1.05, 0.17) 0.31
 ```
 
-Figure 2 below also shows the results of implementing the continuous
-methodology, unadjusted, as well as adjusted for covariates via ’s
-ANCOVA-type method. Results when implementing the continuous methodology
-are consistent with those found with our methodology. Adjusting for
-covariates via RB-ANCOVA results in a similar estimate and confidence
-interval to that of ’s method, but the RB-ANCOVA adjustment does not
-require the assumptions of to hold.
+***Figure 2*** below also shows the results of implementing continuous
+RMST methodology, unadjusted, as well as adjusted for covariates via
+Tian et al. (2018)’s ANCOVA-type method and Andersen et al. (2003,
+2004)’s pseudo-value method. Results when implementing the continuous
+methodology are consistent with those found with our methodology.
+Adjusting for covariates via RB-ANCOVA results in a similar estimate and
+confidence interval to that of Tian et al. (2018)’s and Andersen et
+al. (2003, 2004)’s methods, but the RB-ANCOVA adjustment does not
+require the assumptions of these model-based methods to hold.
+
+![](RMST-RBANCOVA_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+***Figure 2.*** *Estimates and corresponding confidence intervals for
+difference in RMST of D-penicillamine vs. Placebo. Adjusted estimates
+adjust for histolic stage of disease, serum bilirubin (mg/dl), serum
+albumin (g/dl), and urine copper (ug/day). The Continuous-Adjusted
+results are shown from implementation of the continuous methodology,
+adjusting for covariates with Tian et al. (2018)’s ANCOVA-type method.*
 
 ## Multiple Timepoints
 
@@ -172,32 +191,32 @@ results_2times <- rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pb
 #>  covariate-adjusted                 Treated - Control      5
 #>  covariate-adjusted                 Treated - Control     10
 #>  covariate-adjusted Δ(t2 - t1) of (Treated - Control) 10 - 5
-#>               est_CI    p_value
-#>    4.30 (4.09, 4.51)         NA
-#>    7.13 (6.58, 7.69)         NA
-#>    4.18 (3.95, 4.42)         NA
-#>    7.28 (6.70, 7.87)         NA
-#>   0.12 (-0.20, 0.43) 0.46650697
-#>  -0.15 (-0.95, 0.65) 0.71420286
-#>  -0.27 (-0.83, 0.29) 0.35186914
-#>   0.01 (-0.23, 0.24) 0.96579967
-#>  -0.44 (-1.05, 0.17) 0.15827477
-#>  -0.44 (-0.91, 0.02) 0.05990874
+#>               est_CI   se
+#>    4.30 (4.09, 4.51) 0.11
+#>    7.13 (6.58, 7.69) 0.28
+#>    4.18 (3.95, 4.42) 0.12
+#>    7.28 (6.70, 7.87) 0.30
+#>   0.12 (-0.20, 0.43) 0.16
+#>  -0.15 (-0.95, 0.65) 0.41
+#>  -0.27 (-0.83, 0.29) 0.29
+#>   0.01 (-0.23, 0.24) 0.12
+#>  -0.44 (-1.05, 0.17) 0.31
+#>  -0.44 (-0.91, 0.02) 0.24
 ```
 
 At 5 years, the unadjusted RMST difference (PBC - placebo) was estimated
 to be 0.12 years with a 95% confidence interval of \[-0.20, 0.43\]. This
 small difference suggests that the early phase of the trial showed
 minimal treatment effect, which is consistent with the observed survival
-probabilities during this period (Figure 1). Over 10 years, the
+probabilities during this period (***Figure 3***). Over 10 years, the
 unadjusted RMST difference was estimated to be -0.15 days with a 95%
 confidence interval of \[-0.95, 0.65\], as described in the single
 timepoint analysis above. This estimate is in the opposite direction of
 the estimate from 0 to 5 years, with the switch happening between 5 and
-10 years (Figure 1). The difference in RMST between 5 and 10 years was
--0.27 years (95% CI: \[-0.83, 0.29\]). All three confidence intervals
-include zero, indicating the possibility of no treatment effect from 0
-to 5 years, 0 to 10 years, and from 5 to 10 years.
+10 years (***Figure 3***). The difference in RMST between 5 and 10 years
+was -0.27 years (95% CI: \[-0.83, 0.29\]). All three confidence
+intervals include zero, indicating the possibility of no treatment
+effect from 0 to 5 years, 0 to 10 years, and from 5 to 10 years.
 
 To further refine these estimates, we employed RB-ANCOVA to adjust for
 covariates, as described in the single timepoint analysis above. After
@@ -209,23 +228,40 @@ CI: \[-0.91, 0.02\]).These results indicate no significant differences
 between arms within any of the intervals (all 95% CIs include 0). Point
 estimates suggest minimal early separation at 5 years and a possible
 late disadvantage for the treated arm by 10 years, with the 5–10-year
-increment likewise negative. illustrates these results, showing the
-unadjusted and adjusted RMST differences at both timepoints (5 years and
-10 years) as well as the difference between them.
+increment likewise negative. ***Figure 3*** illustrates these results,
+showing the unadjusted and adjusted RMST differences at both timepoints
+(5 years and 10 years) as well as the difference between them.
 
-![](RMST-RBANCOVA_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](RMST-RBANCOVA_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+***Figure 3.*** *Estimates and corresponding confidence intervals for
+difference in RMST of PBC treatment vs. placebo at 5 years and 10 years
+and the difference between 5 and 10-year estimates. Adjusted estimates
+adjust for histologic stage of disease, copper (ug/day), serum bilirubin
+(mg/dl), and serum albumin (g/dl).*
 
 ## References
 
+Andersen PK, Hansen MG, Klein JP. Regression analysis of restricted mean
+survival time based on pseudo-observations. Lifetime Data Analysis
+2004;10(4):335–350.
+
+Andersen PK, Klein JP, Rosthøj S. Generalised linear models for
+correlated pseudo-observations, with applications to multi-state models.
+Biometrika 2003;90:15–27.
+
 Mayo Clinic Press Editors, Primary Biliary Cholangitis: Tests and
-Treatments You Can Expect; 2024. <https://>
-mcpress.mayoclinic.org/living-well/primary-biliary-cholangitis-tests-and-treatments-you-can-expect/,
-ac- cessed: 2024-10-06.
+Treatments You Can Expect; 2024.
+<https://mcpress.mayoclinic.org/living-well/primary-biliary-cholangitis-tests-and-treatments-you-can-expect/>,
+accessed: 2024-10-06.
 
 Therneau TM. A Package for Survival Analysis in R; 2024,
 <https://CRAN.R-project.org/package=survival>, r package version 3.6-4
 
 Therneau TM, Grambsch PM. Modeling Survival Data: Extending the Cox
 Model. New York: Springer; 2000
+
+Tian L, Fu H, Ruberg SJ, Uno H, Wei LJ. Efficiency of Two Sample Tests
+via the Restricted Mean Survival Time for Analyzing Event Time
+Observations. Biometrics 2018;74(2):694–702. Epub 2017 Sep 12.
 
 <!-- rmarkdown::render("vignettes/RMST-RBANCOVA.Rmd") -->
