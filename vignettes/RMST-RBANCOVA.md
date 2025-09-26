@@ -86,11 +86,11 @@ higher probability of survival compared to those in the D-penicillamine
 group until approximately year nine or ten.
 
 <img src="RMST-RBANCOVA_files/figure-gfm/unnamed-chunk-3-1.png" width="100%" />
-***Figure 1.*** *Kaplan-Meier (KM) estimate for time-to-death of each
+***Figure 1*** Kaplan-Meier (KM) estimate for time-to-death of each
 treatment group (D-penicillamine or placebo) for patients enrolled in
 the PBC Mayo Clinic trial. Time represents years from trial registration
 to death or last date known alive. Risk table shows number at risk
-(cumulative number censored) at each time point.*
+(cumulative number censored) at each time point.\*
 
 ## Single Timepoint
 
