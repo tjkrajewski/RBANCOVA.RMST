@@ -27,6 +27,8 @@ devtools::install()
 
 library(RBANCOVA.RMST)
 library(dplyr)
+library(ggplot2)
+library(stringr)
 
 ```
 
@@ -129,7 +131,7 @@ While the RB-ANCOVA results are consistent with the unadjusted results, the cova
 
 ```{r}
 
-rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, time_var="time_year", event_var="status_dichot", covariate_vars=c("stage","copper_imp", "bili", "albumin"), timepoints=10, num_intervals=10)
+results_1time <- rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, time_var="time_year", event_var="status_dichot", covariate_vars=c("stage","copper_imp", "bili", "albumin"), timepoints=10, num_intervals=10)
 
 ```
 
@@ -151,7 +153,7 @@ Due to the crossing of the KM curves for the placebo and PBC arms around 5 years
 
 ```{r}
 
-rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, time_var="time_year", event_var="status_dichot", covariate_vars=c("stage","copper_imp", "bili", "albumin"), timepoints=c(5,10), num_intervals=10)
+results_2times <- rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, time_var="time_year", event_var="status_dichot", covariate_vars=c("stage","copper_imp", "bili", "albumin"), timepoints=c(5,10), num_intervals=10)
 
 ```
 
@@ -161,8 +163,84 @@ To further refine these estimates, we employed RB-ANCOVA to adjust for covariate
 
 ```{r, echo = FALSE, warning=FALSE, results=FALSE, message=FALSE}
 
+res <- results_2times  # your object
+
+# helper to pull numeric CI bounds from the "est_CI" string
+get_bounds <- function(x) {
+  m <- str_match(x, "\\(([-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?),\\s*([-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?)\\)")
+  c(lower = as.numeric(m[,2]), upper = as.numeric(m[,3]))
+}
+
+# pull a single row (estimate + CI) from unadj/adj per-time or delta
+grab <- function(which = c("unadj","adj"), tval = NULL, delta = FALSE) {
+  which <- match.arg(which)
+  src <- if (which == "unadj") res$unadjusted else res$adjusted
+  stopifnot(!is.null(src))  # adjusted may be NULL if you ran without covariates
+  
+  df <- if (!delta) {
+    src$per_time %>%
+      filter(contrast == "Treated - Control",
+             as.character(time) == as.character(tval)) %>%
+      slice(1)
+  } else {
+    src$delta %>% slice(1)
+  }
+  b <- get_bounds(df$est_CI[1])
+  tibble(Estimate = df$estimate[1],
+         Lower_CI = b["lower"],
+         Upper_CI = b["upper"])
+}
+
+# build long dataset in the order you described:
+estimates_long <- bind_rows(
+  mutate(grab("unadj", tval = 5,  delta = FALSE), Timepoint = "5 years",  Model = "Unadjusted"),
+  mutate(grab("adj",   tval = 5,  delta = FALSE), Timepoint = "5 years",  Model = "Adjusted"),
+  mutate(grab("unadj", tval = 10, delta = FALSE), Timepoint = "10 years", Model = "Unadjusted"),
+  mutate(grab("adj",   tval = 10, delta = FALSE), Timepoint = "10 years", Model = "Adjusted"),
+  mutate(grab("unadj", delta = TRUE),             Timepoint = "Difference (10y - 5y)", Model = "Unadjusted"),
+  mutate(grab("adj",   delta = TRUE),             Timepoint = "Difference (10y - 5y)", Model = "Adjusted")
+) %>%
+  select(Timepoint, Model, Estimate, Lower_CI, Upper_CI) %>%
+  mutate(
+    Timepoint = factor(Timepoint,
+                       levels = c("Difference (10y - 5y)", "10 years", "5 years")),
+    Estimate_CI = sprintf("%.2f (%.2f, %.2f)", Estimate, Lower_CI, Upper_CI)
+  )
+
+estimates_long
+
+# Plot
+ggplot(estimates_long, aes(x = Timepoint, y = Estimate, color = Model)) +
+  geom_point(size = 4, shape = 16, position = position_dodge(width = 0.6)) +  # Circles for both
+  geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), 
+                width = 0.2, position = position_dodge(width = 0.6), size = 1) +
+  coord_flip() +
+  scale_color_manual(values = c("blue", "black")) +
+  theme_minimal(base_size = 14) +
+  labs(title = "Restricted Mean Survival Time Difference Estimates at 5 and 10 Years",
+       x = "Timepoint",
+       y = "RMST Difference (Years)",
+       color = "Estimator") +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    axis.title = element_text(size = 14, face = "bold"),
+    axis.text = element_text(size = 12),
+    legend.position = "top",
+    plot.margin = margin(5, 20, 5, 5)  # Adjust margins as needed
+  ) +
+  geom_vline(xintercept = 1.4, linetype = "dashed", size=1, color = "red")+
+  #geom_hline(yintercept = 0, linetype = "dashed", color = "grey")+
+  # Add Estimate (95% CI) below the bars
+  geom_text(aes(label = Estimate_CI),
+            position = position_dodge(width = 0.6),
+            vjust = 2,  # Move text below the bar
+            size = 4,
+            hjust = 0.5, show.legend = F) +
+  # Expand plot to ensure space for text below
+  scale_y_continuous(expand = expansion(mult = c(0.2, 0.1)))
 
 ```
+\emph{Figure 3. Estimates and corresponding confidence intervals for difference in RMST of PBC treatment vs. placebo at 5 years and 10 years and the difference between 5 and 10-year estimates. Adjusted estimates adjust for histologic stage of disease, copper (ug/day), serum bilirubin (mg/dl), and serum albumin (g/dl).}
 
 ## References
 
