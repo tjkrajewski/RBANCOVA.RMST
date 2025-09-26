@@ -372,6 +372,7 @@ calculate_rmst_with_covariates  <- function(dataset, time_var, event_var, covari
   sprintf(paste0("%.",digits,"f (%.",digits,"f, %.",digits,"f)"), e, l, u)
 }
 
+
 #------------------------------------------------------------------------------------#
 # Function to estimate difference in RMSTs + CIs, unadjusted and covariate-adjusted
 #------------------------------------------------------------------------------------#
@@ -380,11 +381,19 @@ calc_diff_unadj_and_wls <- function(trt, ctl,
                                     alpha = 0.05,
                                     digits = 2,
                                     contrast_idx = c(1, length(time_labels)),
-                                    covariates = covariate_vars,        # <— NEW
-                                    print_table = TRUE) {
+                                    covariates = NULL,        # controls whether adjusted rows are computed
+                                    print_table = TRUE,
+                                    show_p = FALSE) {         # <— NEW: controls whether p-values are shown
   
   if (length(time_labels) < 1) stop("Provide time_labels (length = L).")
   L <- length(time_labels)
+  
+  # helper to safe-rbind possibly NULL dfs
+  .bind_safe <- function(...) {
+    dfs <- Filter(function(x) !is.null(x) && NROW(x) > 0, list(...))
+    if (!length(dfs)) return(NULL)
+    do.call(rbind, dfs)
+  }
   
   # Pull stacked vector and covariance from each arm
   TRT <- .adapt_result(trt)
@@ -405,44 +414,69 @@ calc_diff_unadj_and_wls <- function(trt, ctl,
   # --- Per-arm RMSTs (unadjusted)
   d_T  <- TRT$d[1:L]; V_TT <- TRT$V[1:L, 1:L, drop = FALSE]
   d_C  <- CTL$d[1:L]; V_CC <- CTL$V[1:L, 1:L, drop = FALSE]
+  
   rmst_rows_t <- do.call(rbind, lapply(seq_len(L), function(j) {
-    s <- ._one_ci(d_T[j], V_TT[j, j], alpha)
-    data.frame(method="unadjusted", contrast="RMST (Treated)",
-               time=as.character(time_labels[j]), estimate=d_T[j],
-               est_CI=._fmt(d_T[j], s["lcl"], s["ucl"], digits),
-               p_value=NA_real_, stringsAsFactors=FALSE)
+    s <- ._one_ci(d_T[j], V_TT[j, j], alpha)  # expects names: se, lcl, ucl, p
+    data.frame(
+      method   = "unadjusted",
+      contrast = "RMST (Treated)",
+      time     = as.character(time_labels[j]),
+      estimate = d_T[j],
+      est_CI   = ._fmt(d_T[j], s["lcl"], s["ucl"], digits),
+      se       = round(unname(s["se"]), digits),
+      p_value  = NA_real_,                        # not meaningful for one-arm levels
+      stringsAsFactors = FALSE
+    )
   }))
   rmst_rows_c <- do.call(rbind, lapply(seq_len(L), function(j) {
     s <- ._one_ci(d_C[j], V_CC[j, j], alpha)
-    data.frame(method="unadjusted", contrast="RMST (Control)",
-               time=as.character(time_labels[j]), estimate=d_C[j],
-               est_CI=._fmt(d_C[j], s["lcl"], s["ucl"], digits),
-               p_value=NA_real_, stringsAsFactors=FALSE)
+    data.frame(
+      method   = "unadjusted",
+      contrast = "RMST (Control)",
+      time     = as.character(time_labels[j]),
+      estimate = d_C[j],
+      est_CI   = ._fmt(d_C[j], s["lcl"], s["ucl"], digits),
+      se       = round(unname(s["se"]), digits),
+      p_value  = NA_real_,
+      stringsAsFactors = FALSE
+    )
   }))
   
   # --- Unadjusted per-timepoint contrast
   d_L  <- d_full[1:L]
   V_LL <- V_full[1:L, 1:L, drop = FALSE]
   unadj_rows <- do.call(rbind, lapply(seq_len(L), function(j) {
-    s <- ._one_ci(d_L[j], V_LL[j,j], alpha)
-    data.frame(method="unadjusted", contrast="Treated - Control",
-               time=as.character(time_labels[j]), estimate=d_L[j],
-               est_CI=._fmt(d_L[j], s["lcl"], s["ucl"], digits),
-               p_value=unname(s["p"]), stringsAsFactors=FALSE)
+    s <- ._one_ci(d_L[j], V_LL[j, j], alpha)
+    data.frame(
+      method   = "unadjusted",
+      contrast = "Treated - Control",
+      time     = as.character(time_labels[j]),
+      estimate = d_L[j],
+      est_CI   = ._fmt(d_L[j], s["lcl"], s["ucl"], digits),
+      se       = round(unname(s["se"]), digits),
+      p_value  = unname(s["p"]),
+      stringsAsFactors = FALSE
+    )
   }))
   
+  # Optional unadjusted Δ (between two timepoints)
   delta_unadj <- NULL
   if (length(contrast_idx) == 2) {
     i <- contrast_idx[1]; k <- contrast_idx[2]
-    cvec <- numeric(L); cvec[i] <- -1; cvec[k] <- 1
-    est <- as.numeric(c(cvec %*% d_L))
-    var <- as.numeric(t(cvec) %*% V_LL %*% cvec)
-    s   <- ._one_ci(est, var, alpha)
-    delta_unadj <- data.frame(method="unadjusted",
-                              contrast="Δ(t2 - t1) of (Treated - Control)",
-                              time=paste0(time_labels[k], " - ", time_labels[i]),
-                              estimate=est, est_CI=._fmt(est, s["lcl"], s["ucl"], digits),
-                              p_value=unname(s["p"]), stringsAsFactors=FALSE)
+    cvec <- numeric(L); cvec[i] <- -1; cvec[k] <-  1
+    est  <- as.numeric(c(cvec %*% d_L))
+    var  <- as.numeric(t(cvec) %*% V_LL %*% cvec)
+    s    <- ._one_ci(est, var, alpha)
+    delta_unadj <- data.frame(
+      method   = "unadjusted",
+      contrast = "Δ(t2 - t1) of (Treated - Control)",
+      time     = paste0(time_labels[k], " - ", time_labels[i]),
+      estimate = est,
+      est_CI   = ._fmt(est, s["lcl"], s["ucl"], digits),
+      se       = round(unname(s["se"]), digits),
+      p_value  = unname(s["p"]),
+      stringsAsFactors = FALSE
+    )
   }
   
   # --- Adjusted (only if covariates provided)
@@ -456,39 +490,54 @@ calc_diff_unadj_and_wls <- function(trt, ctl,
     V_bw <- Minv                                            # LxL
     
     adj_rows <- do.call(rbind, lapply(seq_len(L), function(j) {
-      s <- ._one_ci(b_w[j], V_bw[j,j], alpha)
-      data.frame(method="covariate-adjusted", contrast="Treated - Control",
-                 time=as.character(time_labels[j]), estimate=b_w[j],
-                 est_CI=._fmt(b_w[j], s["lcl"], s["ucl"], digits),
-                 p_value=unname(s["p"]), stringsAsFactors=FALSE)
+      s <- ._one_ci(b_w[j], V_bw[j, j], alpha)
+      data.frame(
+        method   = "covariate-adjusted",
+        contrast = "Treated - Control",
+        time     = as.character(time_labels[j]),
+        estimate = b_w[j],
+        est_CI   = ._fmt(b_w[j], s["lcl"], s["ucl"], digits),
+        se       = round(unname(s["se"]), digits),
+        p_value  = unname(s["p"]),
+        stringsAsFactors = FALSE
+      )
     }))
     
     if (length(contrast_idx) == 2) {
       i <- contrast_idx[1]; k <- contrast_idx[2]
-      g <- numeric(L); g[i] <- -1; g[k] <- 1
+      g <- numeric(L); g[i] <- -1; g[k] <-  1
       est <- as.numeric(c(g %*% b_w))
       var <- as.numeric(t(g) %*% V_bw %*% g)
       s   <- ._one_ci(est, var, alpha)
-      delta_adj <- data.frame(method="covariate-adjusted",
-                              contrast="Δ(t2 - t1) of (Treated - Control)",
-                              time=paste0(time_labels[k], " - ", time_labels[i]),
-                              estimate=est, est_CI=._fmt(est, s["lcl"], s["ucl"], digits),
-                              p_value=unname(s["p"]), stringsAsFactors=FALSE)
+      delta_adj <- data.frame(
+        method   = "covariate-adjusted",
+        contrast = "Δ(t2 - t1) of (Treated - Control)",
+        time     = paste0(time_labels[k], " - ", time_labels[i]),
+        estimate = est,
+        est_CI   = ._fmt(est, s["lcl"], s["ucl"], digits),
+        se       = round(unname(s["se"]), digits),
+        p_value  = unname(s["p"]),
+        stringsAsFactors = FALSE
+      )
     }
   }
   
   # --- Build table(s)
-  base_tbl <- rbind(rmst_rows_t, rmst_rows_c, unadj_rows, delta_unadj)
-  pretty_tbl <- if (do_adjusted) rbind(base_tbl, adj_rows, delta_adj) else base_tbl
+  base_tbl   <- .bind_safe(rmst_rows_t, rmst_rows_c, unadj_rows, delta_unadj)
+  pretty_tbl <- if (do_adjusted) .bind_safe(base_tbl, adj_rows, delta_adj) else base_tbl
   rownames(pretty_tbl) <- NULL
   
+  # Choose columns to print/return
+  cols <- c("method","contrast","time","est_CI","se")
+  if (isTRUE(show_p)) cols <- c(cols, "p_value")
+  
   if (isTRUE(print_table)) {
-    print(pretty_tbl[, c("method","contrast","time","est_CI","p_value")], row.names = FALSE)
+    print(pretty_tbl[, cols, drop = FALSE], row.names = FALSE)
   }
   
   # Return everything
   out <- list(
-    table_pretty = pretty_tbl[, c("method","contrast","time","est_CI","p_value")],
+    table_pretty = pretty_tbl[, cols, drop = FALSE],
     arms         = list(
       treated = list(d = d_T, V = V_TT, rows = rmst_rows_t),
       control = list(d = d_C, V = V_CC, rows = rmst_rows_c)
@@ -496,7 +545,8 @@ calc_diff_unadj_and_wls <- function(trt, ctl,
     unadjusted   = list(d = d_L, V = V_LL,
                         per_time = unadj_rows, delta = delta_unadj),
     meta         = list(L = L, K = K, time_labels = time_labels,
-                        contrast_idx = contrast_idx)
+                        contrast_idx = contrast_idx,
+                        show_p = show_p)
   )
   if (do_adjusted) {
     out$adjusted <- list(b = b_w, V = V_bw, per_time = adj_rows, delta = delta_adj)
