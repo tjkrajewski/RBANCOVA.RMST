@@ -204,19 +204,20 @@ results_2times <- rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pb
 #>  -0.44 (-0.91, 0.02) 0.24
 ```
 
-At 5 years, the unadjusted RMST difference (PBC - placebo) was estimated
-to be 0.12 years with a 95% confidence interval of \[-0.20, 0.43\]. This
-small difference suggests that the early phase of the trial showed
-minimal treatment effect, which is consistent with the observed survival
-probabilities during this period (***Figure 3***). Over 10 years, the
-unadjusted RMST difference was estimated to be -0.15 days with a 95%
-confidence interval of \[-0.95, 0.65\], as described in the single
-timepoint analysis above. This estimate is in the opposite direction of
-the estimate from 0 to 5 years, with the switch happening between 5 and
-10 years (***Figure 3***). The difference in RMST between 5 and 10 years
-was -0.27 years (95% CI: \[-0.83, 0.29\]). All three confidence
-intervals include zero, indicating the possibility of no treatment
-effect from 0 to 5 years, 0 to 10 years, and from 5 to 10 years.
+At 5 years, the unadjusted RMST difference (D-Penicillamine - placebo)
+was estimated to be 0.12 years with a 95% confidence interval of
+\[-0.20, 0.43\]. This small difference suggests that the early phase of
+the trial showed minimal treatment effect, which is consistent with the
+observed survival probabilities during this period (***Figure 3***).
+Over 10 years, the unadjusted RMST difference was estimated to be -0.15
+days with a 95% confidence interval of \[-0.95, 0.65\], as described in
+the single timepoint analysis above. This estimate is in the opposite
+direction of the estimate from 0 to 5 years, with the switch happening
+between 5 and 10 years (***Figure 3***). The difference in RMST between
+5 and 10 years was -0.27 years (95% CI: \[-0.83, 0.29\]). All three
+confidence intervals include zero, indicating the possibility of no
+treatment effect from 0 to 5 years, 0 to 10 years, and from 5 to 10
+years.
 
 To further refine these estimates, we employed RB-ANCOVA to adjust for
 covariates, as described in the single timepoint analysis above. After
@@ -233,6 +234,7 @@ showing the unadjusted and adjusted RMST differences at both timepoints
 (5 years and 10 years) as well as the difference between them.
 
 ![](RMST-RBANCOVA_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
 ***Figure 3.*** *Estimates and corresponding confidence intervals for
 difference in RMST of PBC treatment vs. placebo at 5 years and 10 years
 and the difference between 5 and 10-year estimates. Adjusted estimates
