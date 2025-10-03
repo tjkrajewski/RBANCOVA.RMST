@@ -265,7 +265,7 @@ ggplot(plot_df2, aes(x = Method, y = Estimate, color = Estimator)) +
 
 ```
 
-***Figure 2.*** *Estimates and corresponding confidence intervals for difference in RMST of D-penicillamine vs. Placebo. Adjusted estimates adjust for histolic stage of disease, serum bilirubin (mg/dl), serum albumin (g/dl), and urine copper (ug/day). The Continuous-Adjusted results are shown from implementation of the continuous methodology, adjusting for covariates with Tian et al. (2018)'s ANCOVA-type method.*
+***Figure 2.*** *Estimates and corresponding confidence intervals for difference in RMST of D-penicillamine vs. Placebo. Adjusted estimates adjust for histolic stage of disease, serum bilirubin (mg/dl), serum albumin (g/dl), and urine copper (ug/day). The Continuous-Adjusted results are shown from implementation of the continuous methodology, adjusting for covariates with Andersen et al. (2003, 2004)'s pseudo-value method and Tian et al. (2018)'s ANCOVA-type method.*
 
 
 ## Multiple Timepoints
