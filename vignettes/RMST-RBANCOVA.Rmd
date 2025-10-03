@@ -152,7 +152,7 @@ cont_unadj <- rmst2(pbc_filtered$time_year, pbc_filtered$status_dichot, pbc_filt
 cont_tian <- rmst2(pbc_filtered$time_year, pbc_filtered$status_dichot, pbc_filtered$arm, tau=10, covariates = pbc_filtered[,c("stage","copper_imp", "bili", "albumin")])
 
 #Andersen
-pseudo <- pseudomean(time = pbc_filtered$time_yea, event = pbc_filtered$status_dichot, tmax = 10)
+pseudo <- pseudomean(time = pbc_filtered$time_year, event = pbc_filtered$status_dichot, tmax = 10)
 fit_pv <- geeglm(pseudo ~ as.factor(arm)+as.factor(stage)+copper_imp+bili+albumin, id = seq_len(nrow(pbc_filtered)),
                  family = gaussian, corstr = "independence", data = pbc_filtered)
 summary(fit_pv)  # coef on arm = covariate-adjusted ΔRMST(τ)
