@@ -33,7 +33,7 @@ library(stringr)
 
 # Overview
 
-This vignette shows how to implement Randmoziation-Based Covariance Analysis (RB_ANCOVA) for Restricted Mean Survival Time (RMST) contrasts using RBANCOVA.RMST. We’ll demonstrate via application to estimating the effect of D-Penicillamine for Primary Biliary Cholangitis (PBC).
+This vignette shows how to implement Randomoziation-Based Covariance Analysis (RB_ANCOVA) for Restricted Mean Survival Time (RMST) comparisons between treatments using RBANCOVA.RMST. We’ll demonstrate via application to estimating the effect of D-Penicillamine for Primary Biliary Cholangitis (PBC).
 
 ## APPLICATION: D-PENICILLAMINE FOR PRIMARY BILIARY CHOLANGITIS
 Primary biliary cholangitis (PBC) is a chronic autoimmune disease characterized by progressive inflammation and destruction of the small bile ducts within the liver, ultimately leading to cirrhosis (permanent scarring of liver tissues) and liver failure in advanced stages (May Clinic 2024). The progression of PBC is inevitable, but it can be prolonged with treatment. Due to its clinical importance and the need for effective therapeutic options, PBC has been a focus of clinical trials for several decades. A dataset often used to study the natural history and treatment response in PBC patients originates from a Mayo Clinic trial conducted between 1974 and 1984.
@@ -71,10 +71,10 @@ pbc_filtered <- pbc_filtered %>%
 ```
 
 
-This analysis focuses on the 312 trial participants (158 in the D-penicillamine arm, 154 in the placebo arm). We implement randomization-based covariate adjustment for RMST estimation, as described in Section \ref{sec:ch4_methods}, to estimate treatment effects when adjusting for a selection of covariates. 
+This analysis focuses on the 312 trial participants (158 in the D-penicillamine arm, 154 in the placebo arm). We implement randomization-based covariate adjustment for RMST estimation, as described in Section Section 4 of Krajewski & Koch (2025), to estimate treatment effects when adjusting for a selection of covariates. 
 
 
-The methodology described in Section \ref{sec:ch4_rmst_methodology} was applied to the PBC dataset. The Kaplan-Meier curves below illustrate the time to event for participants in the placebo and D-penicillamine groups over a 12.5-year follow-up period. Over the first five years, there is minimal separation in survival probabilites between the two arms, with the D-penicillamine arm showing slightly higher survival probabilities compared to the placebo group. However, starting around five years, the Kaplan-Meier survival curves demonstrate that participants in the placebo arm generally had a higher probability of survival compared to those in the D-penicillamine group until approximately year nine or ten. 
+The methodology described in Section 4 of Krajewski & Koch (2025) was applied to the PBC dataset. The Kaplan-Meier curves below illustrate the time to event for participants in the placebo and D-penicillamine groups over a 12.5-year follow-up period. Over the first five years, there is minimal separation in survival probabilites between the two arms, with the D-penicillamine arm showing slightly higher survival probabilities compared to the placebo group. However, starting around five years, the Kaplan-Meier survival curves demonstrate that participants in the placebo arm generally had a higher probability of survival compared to those in the D-penicillamine group until approximately year nine or ten. 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=6, out.width="100%"}
 
@@ -91,12 +91,13 @@ ggsurvplot(fit_trt,
            legend.title = "Trial Arm",
            break.time.by = 1)    
 ```
+
 ***Figure 1*** Kaplan-Meier (KM) estimate for time-to-death of each treatment group (D-penicillamine or placebo) for patients enrolled in the PBC Mayo Clinic trial. Time represents years from trial registration to death or last date known alive. Risk table shows number at risk (cumulative number censored) at each time point.*
 
 
 ## Single Timepoint
 
-To quantify the observed difference, we calculated the RMST for each group from the start of the trial until year ten using ten yearly intervals. Time was restricted to ten years of follow-up as many individuals at risk after year ten were censored before the end of follow-up. This yielded an RMST of 7.13 years (SE 0.28) for the D-penicillamine group and 7.28 years (SE 0.30) for the placebo group. The unadjusted difference in RMST (D-penicillamine - placebo) was estimated to be -0.15 years with a confidence interval of [-0.95, 0.65] ***Figure 2***. *P-values are not shown but can be requested for contrasts between treatment groups within the rbancova_rmst() function by adding* ***show_p = TRUE***.
+To quantify the observed difference, we calculated the RMST for each group from the start of the trial until year ten using ten yearly intervals. Time was restricted to ten years of follow-up as many individuals at risk after year ten were censored before the end of follow-up. This yielded an RMST of 7.13 years (SE 0.28) for the D-penicillamine group and 7.28 years (SE 0.30) for the placebo group. The unadjusted difference in RMST (D-penicillamine - placebo) was estimated to be -0.15 years with a confidence interval of [-0.95, 0.65] ***Figure 2***. *P-values are not shown but can be requested for comparisons between treatment groups within the rbancova_rmst() function by adding* ***show_p = TRUE***.
 
 ```{r}
 pbc_filtered_trt <- pbc_filtered[pbc_filtered$arm==1,]
@@ -106,7 +107,7 @@ rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pbc_filtered_ctl, ti
 
 ```
 
-To further refine the estimated difference in RMST, we employed RB-ANCOVA to adjust for covariates selected via stepwise selection. The covariates retained for adjustment were histologic stage of disease, copper (ug/day), serum bilirubin (mg/dl), and serum albumin (g/dl), reflecting clinically relevant factors that might impact survival outcomes. Baseline balance between the trial arms was similar for most of these covariates (Table \ref{table:pbc_covs}): the average histoloic stage was slightly higher in the placebo group (3.09 vs. 2.97), while serum bilirubin levels were lower in the D-penicillamine group (2.87 vs. 3.65 mg/dl). Copper levels and serum albumin were comparable between groups, indicating minimal baseline differences. Assessing the extent of random imbalance between the two treatment arms, as described in Section \ref{sec:ch4_Step6_wls_main} gave no evidence of unexpected imbalance among the covariates (p-value = 0.23). 
+To more precisely estimate the difference in RMST, we employed RB-ANCOVA to adjust for covariates selected via stepwise selection using PHREG in SAS. The covariates retained for adjustment were histologic stage of disease, copper (ug/day), serum bilirubin (mg/dl), and serum albumin (g/dl), reflecting clinically relevant factors that might impact survival outcomes. In accordance with randomization, baseline balance between the trial arms was similar for most of these covariates (Table \ref{table:pbc_covs}): the average histoloic stage was slightly higher in the placebo group (3.09 vs. 2.97), while serum bilirubin levels were lower in the D-penicillamine group (2.87 vs. 3.65 mg/dl). Copper levels and serum albumin were comparable between groups, indicating minimal baseline differences. Assessing the extent of random imbalance between the two treatment arms, as described in Section 3.2.6 of Krajewski & Koch (2025), gave no evidence of unexpected imbalance among the covariates (p-value = 0.23). 
 
 \begin{table}
 \caption{Mean (SE) of selected variables by treatment arm}
@@ -270,7 +271,7 @@ ggplot(plot_df2, aes(x = Method, y = Estimate, color = Estimator)) +
 
 ## Multiple Timepoints
 
-Due to the crossing of the KM curves for the placebo and PBC arms around 5 years, we additionally estimated the difference in RMST between the two groups for three time intervals of interest: 0 to 5 years, 0 to 10 years, and 5 to 10 years. This approach allowed us to assess hwo the treatment effect evolved over time. 
+Due to the crossing of the KM curves for the placebo and PBC arms around 5 years, we additionally estimated the difference in RMST between the two groups for three time intervals of interest: 0 to 5 years, 0 to 10 years, and 5 to 10 years. This approach allowed us to assess who the treatment effect evolved over time. 
 
 ```{r}
 
@@ -278,9 +279,9 @@ results_2times <- rbancova_rmst(data_treated = pbc_filtered_trt, data_control=pb
 
 ```
 
-At 5 years, the unadjusted RMST difference (D-Penicillamine - placebo) was estimated to be 0.12 years with a 95\% confidence interval of [-0.20, 0.43]. This small difference suggests that the early phase of the trial showed minimal treatment effect, which is consistent with the observed survival probabilities during this period (***Figure 3***). Over 10 years, the unadjusted RMST difference was estimated to be -0.15 days with a 95\% confidence interval of [-0.95, 0.65], as described in the single timepoint analysis above. This estimate is in the opposite direction of the estimate from 0 to 5 years, with the switch happening between 5 and 10 years (***Figure 3***). The difference in RMST between 5 and 10 years was -0.27 years (95\% CI: [-0.83, 0.29]). All three confidence intervals include zero, indicating the possibility of no treatment effect from 0 to 5 years, 0 to 10 years, and from 5 to 10 years. 
+At 5 years, the unadjusted RMST difference (D-Penicillamine - placebo) was estimated to be 0.12 years with a 95\% confidence interval of [-0.20, 0.43]. This small difference suggests that the early phase of the trial showed minimal treatment effect, which is consistent with the observed survival probabilities during this period (***Figure 3***). Over 10 years, the unadjusted RMST difference was estimated to be -0.15 years with a 95\% confidence interval of [-0.95, 0.65], as described in the single timepoint analysis above. This estimate is in the opposite direction of the estimate from 0 to 5 years, with the switch happening between 5 and 10 years (***Figure 3***). The difference in RMST between 5 and 10 years was -0.27 years (95\% CI: [-0.83, 0.29]). All three confidence intervals include zero, indicating no treatment effect from 0 to 5 years, 0 to 10 years, and from 5 to 10 years. 
 
-To further refine these estimates, we employed RB-ANCOVA to adjust for covariates, as described in the single timepoint analysis above. After covariate adjustment, the RMST difference at 5 years was 0.01 years with a 95\% confidence interval of [-0.23, 0.24]. The adjusted RMST difference at 10 years was -0.44 days (95\% CI: [-1.05, 0.17]). The adjusted difference in RMST between 5 and 10 years was -0.44 years (95\% CI: [-0.91, 0.02]).These results indicate no significant differences between arms within any of the intervals (all 95% CIs include 0). Point estimates suggest minimal early separation at 5 years and a possible late disadvantage for the treated arm by 10 years, with the 5–10-year increment likewise negative. ***Figure 3*** illustrates these results, showing the unadjusted and adjusted RMST differences at both timepoints (5 years and 10 years) as well as the difference between them.
+To further refine these estimates, we employed RB-ANCOVA to adjust for covariates, as described in the single timepoint analysis above. After covariate adjustment, the RMST difference at 5 years was 0.01 years with a 95\% confidence interval of [-0.23, 0.24]. The adjusted RMST difference at 10 years was -0.44 years (95\% CI: [-1.05, 0.17]). The adjusted difference in RMST between 5 and 10 years was -0.44 years (95\% CI: [-0.91, 0.02]).These results indicate no differences between arms within any of the intervals (all 95% CIs include 0). Point estimates suggest minimal early separation at 5 years and a possible late disadvantage for the treated arm by 10 years, with the 5–10-year increment likewise negative. ***Figure 3*** illustrates these results, showing the unadjusted and adjusted RMST differences at both timepoints (5 years and 10 years) as well as the difference between them.
 
 ```{r, echo = FALSE, warning=FALSE, results=FALSE, message=FALSE}
 
@@ -370,6 +371,8 @@ ggplot(estimates_long, aes(x = Timepoint, y = Estimate, color = Model)) +
 Andersen PK, Hansen MG, Klein JP. Regression analysis of restricted mean survival time based on pseudo-observations. Lifetime Data Analysis 2004;10(4):335–350.
 
 Andersen PK, Klein JP, Rosthøj S. Generalised linear models for correlated pseudo-observations, with applications to multi-state models. Biometrika 2003;90:15–27.
+
+Krajewski TJ, Koch GG. Randomization-Based Covariance Analysis for Confidence Intervals of Treatment Comparisons Based on Restricted Mean Survival Time with Categorized Time-to-Event Data. \emph{Under Review}.
 
 Mayo Clinic Press Editors, Primary Biliary Cholangitis: Tests and Treatments You Can Expect; 2024. https://mcpress.mayoclinic.org/living-well/primary-biliary-cholangitis-tests-and-treatments-you-can-expect/, accessed: 2024-10-06.
 
