@@ -91,8 +91,8 @@ those in the D-penicillamine group until approximately year nine or ten.
 ***Figure 1*** Kaplan-Meier (KM) estimate for time-to-death of each
 treatment group (D-penicillamine or placebo) for patients enrolled in
 the PBC Mayo Clinic trial. Time represents years from trial registration
-to death or last date known alive. Risk table shows number at risk
-(cumulative number censored) at each time point.\*
+to death or last date known alive. Risk table shows number at risk just before the each
+(cumulative number censored during the following interval) at each time point.\*
 
 ## Single Timepoint
 
