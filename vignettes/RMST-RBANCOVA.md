@@ -246,7 +246,7 @@ adjust for histologic stage of disease, copper (ug/day), serum bilirubin
 
 ## Additional Considerations
 
-When the estimated interval-specific survival probability $P_{jk}$ equals 0 or 1, the function handles these edge cases through through a straightforward adjustment of the interval structure. 
+When the estimated interval-specific survival probability $P_{jk}$ equals 0 or 1, the function handles these edge cases through a straightforward adjustment of the interval structure. 
 If $P_{jk}=1$, meaning that no events occur within the interval and all individuals at risk survive through its endpoint, the interval is retained as is. 
 Since $log(1)=0$, this case does not introduce numerical instability, and the corresponding variance and covariance are carried forward unchanged. 
 In contrast, when $P_{jk}=0$, that is, all individuals at risk experience the event before the end of the interval, the *rbancova_rmst()* function consolidates the interval grid by reducing the number of discrete intervals used to span the same total follow-up period. 
